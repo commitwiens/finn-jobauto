@@ -120,10 +120,32 @@
   .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
   .swatch.in { background: var(--input-blue); border: 1px solid var(--input-blue-border); }
   .swatch.out { background: var(--output-grey); border: 1px solid var(--line); }
-  details.assump { background: #2a2e35; border: 1px solid #2a2e35; border-radius: 12px; padding: 12px 16px; margin-top: 18px; font-size: 12.5px; color: #d6dae0; }
-  details.assump summary { cursor: pointer; font-weight: 700; color: #ffffff; }
-  details.assump strong { color: #ffffff; }
-  details.assump ul { margin: 8px 0 0; padding-left: 18px; }
+  /* ===== Berechnungsgrundlagen / Methodik ===== */
+  details.method { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-top: 18px; box-shadow: var(--shadow); overflow: hidden; }
+  details.method > summary { cursor: pointer; list-style: none; padding: 18px 24px; font-size: 12px; text-transform: uppercase; letter-spacing: .8px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 9px; }
+  details.method > summary::-webkit-details-marker { display: none; }
+  details.method > summary::after { content: '+'; margin-left: auto; font-size: 20px; line-height: 1; color: var(--muted); font-weight: 600; }
+  details.method[open] > summary::after { content: '\2013'; }
+  details.method[open] > summary { border-bottom: 1px solid var(--line); }
+  .method-body { padding: 22px 24px 24px; }
+  .method-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
+  .m-block { border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; background: #fcfcfd; }
+  .m-block h4 { margin: 0 0 10px; font-size: 14px; font-weight: 700; letter-spacing: -.2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .m-num { width: 22px; height: 22px; border-radius: 7px; background: var(--finn-blue); color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .m-law { font-size: 10.5px; font-weight: 700; text-transform: none; letter-spacing: 0; padding: 2px 9px; border-radius: 999px; background: var(--finn-sand-soft); color: #8a5a12; }
+  .m-block p { margin: 0 0 8px; font-size: 13px; color: #374151; line-height: 1.55; }
+  .m-block p:last-child { margin-bottom: 0; }
+  .m-list { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .m-list li { font-size: 12.5px; color: #374151; line-height: 1.5; padding-left: 16px; position: relative; }
+  .m-list li::before { content: '\2192'; position: absolute; left: 0; color: var(--finn-blue); font-weight: 700; }
+  .m-list strong { color: var(--ink); }
+  code.f { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; background: #eef1f6; padding: 2px 6px; border-radius: 6px; color: var(--finn-blue-deep); }
+  .const-wrap { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
+  .const-wrap h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin: 0 0 10px; font-weight: 700; }
+  table.const { width: 100%; border-collapse: collapse; }
+  table.const td { padding: 8px 4px; font-size: 12.5px; border-bottom: 1px solid var(--line); color: #374151; }
+  table.const tr:last-child td { border-bottom: none; }
+  table.const td.val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); white-space: nowrap; }
   .disclaimer { font-size: 11.5px; color: var(--muted); margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
   .badge { display:inline-block; font-size: 11px; padding: 1px 8px; border-radius: 10px; background:#e1e9fb; color: var(--finn-blue-deep); font-weight:600; }
   .note { font-size:12px; color:var(--muted); }
@@ -236,9 +258,9 @@
     </div>
   </section>
 
-  <details class="assump">
-    <summary>📋 Annahmen, Formeln & Konstanten</summary>
-    <ul id="assumpList"></ul>
+  <details class="method">
+    <summary>📋 Berechnungsgrundlagen, Formeln &amp; Konstanten</summary>
+    <div class="method-body" id="methodBody"></div>
   </details>
 
   <p class="disclaimer">
@@ -512,13 +534,68 @@ function renderEmployer(i, s) {
 
 function renderAssumptions() {
   const c = CONFIG;
-  $('assumpList').innerHTML = `
-    <li><strong>Geldwerter Vorteil</strong> (§ 6 Abs. 1 Nr. 4 EStG): Listenpreis-Versteuerung mit {0,25 / 0,5 / 1 %} des Bruttolistenpreises zzgl. 0,03 % je Entfernungskilometer (entsprechend der gewählten Methode). Bruttolistenpreis auf volle 100 € abgerundet.</li>
-    <li><strong>Umsatzsteuer auf den geldw. Vorteil</strong> (UStG): 19 % USt, herausgerechnet (19 %/1,19) auf Basis der vollen 1 %- bzw. 0,03 %-Werte.</li>
-    <li><strong>Zwei Varianten:</strong> „ohne Weitergabe" → Gehaltsumwandlung = Bruttorate, keine USt-Zeile · „mit Weitergabe" → Gehaltsumwandlung = Nettorate (bei Vorsteuerabzug), abzgl. USt auf den geldw. Vorteil.</li>
-    <li><strong>Lohnsteuer</strong> (§ 32a EStG, 2026): Einkommensteuertarif + Vorsorgepauschale (§ 39b EStG: RV + KV + Zusatzbeitrag/2 + PV). Solidaritätszuschlag 5,5 % oberhalb der Freigrenze, Kirchensteuer 8 % (BY/BW) sonst 9 %.</li>
-    <li><strong>Sozialabgaben</strong> (SGB, 2026): RV ${c.employee.rvRate*100} %, ALV ${c.employee.alvRate*100} %, KV ½×Beitragssatz + ½×Zusatzbeitrag, PV ${c.employee.pvRate*100} % (+${c.employee.pvChildless*100} % für Kinderlose). Beitragsbemessungsgrenzen RV/ALV ${fmt2(c.bbg.rvAlv)} · KV/PV ${fmt2(c.bbg.kvPv)} / Monat.</li>
-    <li><strong>Arbeitgeber:</strong> Lohnnebenkosten = Arbeitgeberanteile zur Sozialversicherung. Der Solidaritätszuschlag zählt nicht zu den Arbeitgeber-Lohnnebenkosten.</li>`;
+  // Prozent sauber formatiert — vermeidet Float-Artefakte (0.018*100 = 1.7999…).
+  const p = (v, d = 2) => (v * 100).toLocaleString('de-DE', { maximumFractionDigits: d }) + ' %';
+  $('methodBody').innerHTML = `
+    <div class="method-grid">
+      <article class="m-block">
+        <h4><span class="m-num">1</span>Geldwerter Vorteil<span class="m-law">§ 6 Abs. 1 Nr. 4 EStG</span></h4>
+        <p>Versteuerung des Bruttolistenpreises (BLP, auf volle 100 € abgerundet) nach der gewählten Methode, zzgl. 0,03 % je Entfernungskilometer für den Arbeitsweg.</p>
+        <ul class="m-list">
+          <li>Nutzung: <code class="f">GwV₁ = BLP × {0,25 / 0,5 / 1 %}</code></li>
+          <li>Arbeitsweg: <code class="f">GwV₂ = 0,03 % × BLP × km × Faktor</code></li>
+        </ul>
+      </article>
+      <article class="m-block">
+        <h4><span class="m-num">2</span>Umsatzsteuer auf den geldw. Vorteil<span class="m-law">UStG</span></h4>
+        <p>${p(c.vat.rate, 0)} USt, aus dem geldwerten Vorteil herausgerechnet (19 % / 1,19) — auf Basis der vollen 1 %- bzw. 0,03 %-Werte (ohne EV-Reduktion).</p>
+        <ul class="m-list">
+          <li><code class="f">USt = (1 % × BLP + 0,03 % × BLP × km) × 19 ⁄ 119</code></li>
+        </ul>
+      </article>
+      <article class="m-block">
+        <h4><span class="m-num">3</span>Zwei Varianten</h4>
+        <ul class="m-list">
+          <li><strong>ohne Weitergabe:</strong> Gehaltsumwandlung = Bruttorate, keine USt-Zeile.</li>
+          <li><strong>mit Weitergabe:</strong> Gehaltsumwandlung = Nettorate (bei Vorsteuerabzug), abzgl. USt auf den geldw. Vorteil.</li>
+        </ul>
+      </article>
+      <article class="m-block">
+        <h4><span class="m-num">4</span>Lohnsteuer<span class="m-law">§ 32a EStG · 2026</span></h4>
+        <p>Einkommensteuertarif zzgl. Vorsorgepauschale (§ 39b EStG: RV + KV + ½ Zusatzbeitrag + PV).</p>
+        <ul class="m-list">
+          <li>Solidaritätszuschlag ${p(c.soli.rateOnTax, 1)} oberhalb der Freigrenze</li>
+          <li>Kirchensteuer 8 % (BY/BW), sonst 9 %</li>
+        </ul>
+      </article>
+      <article class="m-block">
+        <h4><span class="m-num">5</span>Sozialabgaben (AN-Anteil)<span class="m-law">SGB · 2026</span></h4>
+        <ul class="m-list">
+          <li>Rentenversicherung ${p(c.employee.rvRate)} · Arbeitslosenvers. ${p(c.employee.alvRate)}</li>
+          <li>Krankenversicherung: ½ Beitragssatz + ½ Zusatzbeitrag</li>
+          <li>Pflegevers. ${p(c.employee.pvRate)} (+${p(c.employee.pvChildless)} kinderlos, +${p(c.employee.pvSaxonyExtra)} Sachsen)</li>
+        </ul>
+      </article>
+      <article class="m-block">
+        <h4><span class="m-num">6</span>Arbeitgeber</h4>
+        <p>Lohnnebenkosten = Arbeitgeberanteile zur Sozialversicherung (RV, KV, PV, ALV). Der Solidaritätszuschlag zählt <strong>nicht</strong> zu den AG-Lohnnebenkosten.</p>
+      </article>
+    </div>
+    <div class="const-wrap">
+      <h4>Konstanten &amp; Rechengrößen 2026</h4>
+      <table class="const"><tbody>
+        <tr><td>GwV Elektro / Hybrid / Verbrenner</td><td class="val">0,25 % / 0,5 % / 1 %</td></tr>
+        <tr><td>Entfernungspauschale (geldw. Vorteil)</td><td class="val">0,03 % je km</td></tr>
+        <tr><td>Umsatzsteuersatz</td><td class="val">${p(c.vat.rate, 0)}</td></tr>
+        <tr><td>Rentenversicherung (AN)</td><td class="val">${p(c.employee.rvRate)}</td></tr>
+        <tr><td>Arbeitslosenversicherung (AN)</td><td class="val">${p(c.employee.alvRate)}</td></tr>
+        <tr><td>Pflegeversicherung (AN)</td><td class="val">${p(c.employee.pvRate)} (+${p(c.employee.pvChildless)} kinderlos)</td></tr>
+        <tr><td>Beitragsbemessungsgrenze RV / ALV</td><td class="val">${fmt2(c.bbg.rvAlv)} / Monat</td></tr>
+        <tr><td>Beitragsbemessungsgrenze KV / PV</td><td class="val">${fmt2(c.bbg.kvPv)} / Monat</td></tr>
+        <tr><td>Grundfreibetrag</td><td class="val">${fmt(c.tax.grundfreibetrag)} / Jahr</td></tr>
+        <tr><td>Soli-Freigrenze (Lohnsteuer)</td><td class="val">${fmt(c.soli.monthlyFreigrenze)} / Monat</td></tr>
+      </tbody></table>
+    </div>`;
 }
 
 function recompute() {
