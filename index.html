@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JobAuto Calculator – Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Inter ≈ FINN's geometric sans; degrades gracefully to system fonts offline -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     STYLING — FINN look & feel.
+     FINN palette: sand/cream #f0cea4, sky-blue #65c3fd / #4aa7df,
+     black & white. Blue = editable input cells (per brief).
+     ============================================================ */
+  :root {
+    --finn-blue: #3070E2;        /* FINN blue accent */
+    --finn-blue-deep: #2056c4;
+    --finn-sky: #6f9ff0;
+    --finn-sand: #f0cea4;        /* FINN warm sand */
+    --finn-sand-soft: #faedd6;
+    --finn-black: #15171c;
+    --cream: #f3f4f6;            /* leicht graue Canvas */
+    --input-blue: #e7eefc;       /* editable input cell (blue tint) */
+    --input-blue-border: #b6c9f4;
+    --output-grey: #f3f4f6;      /* calculated output */
+    --ink: #15171c;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --good: #0fae67;
+    --bad: #d23f4a;
+    --card: #ffffff;
+    --radius: 20px;
+    --shadow: 0 6px 24px rgba(21,23,28,.06);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 8px 24px 64px; }
+  header.app { max-width: 1280px; margin: 0 auto; padding: 26px 24px 6px; }
+  header.app .brand { display: flex; align-items: center; gap: 14px; }
+  header.app .wordmark { font-size: 27px; font-weight: 800; letter-spacing: -1.3px; color: var(--finn-black); line-height: 1; }
+  header.app .logo-div { width: 1.5px; height: 26px; background: #c7cace; display: inline-block; }
+  header.app .wordmark-job { font-size: 27px; font-weight: 600; letter-spacing: -.7px; color: var(--finn-black); line-height: 1; }
+  header.app h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.6px; }
+  header.app p { margin: 8px 0 0; color: var(--muted); font-size: 14px; max-width: 680px; }
+
+  .tabs { display: flex; gap: 8px; margin: 22px 0 18px; }
+  .tab-btn { border: 1px solid var(--line); background: #fff; color: var(--muted); padding: 11px 26px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 999px; transition: all .15s; }
+  .tab-btn:hover { border-color: var(--finn-black); color: var(--ink); }
+  .tab-btn.active { background: var(--finn-black); color: #fff; border-color: var(--finn-black); }
+  .tab-panel { display: none; } .tab-panel.active { display: block; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .card > h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 0 0 16px; font-weight: 700; }
+  .card > h2 .tag { float: right; text-transform: none; letter-spacing: 0; font-size: 11px; padding: 3px 11px; border-radius: 999px; font-weight: 700; }
+  .tag.sand { background: var(--finn-sand-soft); color: #8a5a12; }
+  .tag.sky  { background: #e1e9fb; color: var(--finn-blue-deep); }
+
+  /* Wide input block */
+  .form-section + .form-section { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
+  .form-section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); margin: 0 0 14px; font-weight: 700; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px 22px; }
+  .field2 { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .field2 > label { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .field2 input, .field2 select {
+    width: 100%; padding: 9px 11px; font-size: 14px; font-family: inherit; font-weight: 600;
+    border: 1px solid var(--input-blue-border); background: var(--input-blue);
+    border-radius: 10px; color: var(--ink);
+  }
+  .field2 select { font-weight: 500; }
+  .field2 input:focus, .field2 select:focus { outline: 2px solid var(--finn-blue); outline-offset: 1px; }
+  .field2 input[type=number] { text-align: right; }
+  .toggle-wrap { display: flex; gap: 18px; padding-top: 6px; }
+  .toggle-wrap .opt { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--ink); cursor: pointer; }
+  .toggle-wrap input[type=radio] { accent-color: var(--finn-blue); }
+
+  /* Result cards */
+  .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px,1fr)); gap: 14px; margin-bottom: 18px; }
+  .result { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .result .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+  .result .v { font-size: 25px; font-weight: 800; margin-top: 6px; font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+  .result.hero { background: var(--finn-blue); color: #fff; border-color: var(--finn-blue); box-shadow: 0 8px 24px rgba(48,112,226,.28); }
+  .result.hero.alt { background: var(--finn-black); border-color: var(--finn-black); box-shadow: var(--shadow); }
+  .result.hero .k { color: rgba(255,255,255,.78); }
+  .pos { color: var(--good); } .neg { color: var(--bad); }
+  .hero .pos, .hero .neg { color: #fff; }
+  /* Arbeitgeber: zwei Spalten, je Hero-Karte + graue „tatsächlich"-Karte darunter */
+  #erCards { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 760px){ #erCards { grid-template-columns: 1fr; } }
+  .er-col { display: flex; flex-direction: column; gap: 12px; }
+  .er-col .result { margin: 0; }
+  .result.muted { background: #fff; border-color: var(--line); }
+  .result.muted .v { font-size: 20px; }
+
+  /* Two tables side by side */
+  .tables { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 1024px){ .tables { grid-template-columns: 1fr; } }
+  .tables .card { margin-bottom: 0; }
+
+  table.waterfall { width: 100%; border-collapse: collapse; }
+  table.waterfall th, table.waterfall td { padding: 6px 8px; font-size: 13px; }
+  table.waterfall thead th { text-align: right; color: var(--muted); border-bottom: 2px solid var(--line); font-size: 12px; }
+  table.waterfall thead th:first-child { text-align: left; }
+  table.waterfall td.op { width: 26px; color: var(--muted); text-align: center; }
+  table.waterfall td.lbl { text-align: left; }
+  table.waterfall td.num { text-align: right; font-variant-numeric: tabular-nums; background: var(--output-grey); }
+  table.waterfall tr.sum td { font-weight: 700; border-top: 1px solid var(--line); }
+  table.waterfall tr.total td { font-weight: 800; border-top: 2px solid var(--ink); }
+  table.waterfall tr.total td.num { background: #e7eefc; color: var(--finn-blue-deep); }
+  table.waterfall tr.section td { color: var(--muted); font-weight: 600; padding-top: 10px; }
+
+  .legend { display: flex; gap: 18px; font-size: 12px; color: var(--muted); margin: 6px 0 14px; align-items: center; flex-wrap: wrap; }
+  .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+  .swatch.in { background: var(--input-blue); border: 1px solid var(--input-blue-border); }
+  .swatch.out { background: var(--output-grey); border: 1px solid var(--line); }
+  details.assump { background: #2a2e35; border: 1px solid #2a2e35; border-radius: 12px; padding: 12px 16px; margin-top: 18px; font-size: 12.5px; color: #d6dae0; }
+  details.assump summary { cursor: pointer; font-weight: 700; color: #ffffff; }
+  details.assump strong { color: #ffffff; }
+  details.assump ul { margin: 8px 0 0; padding-left: 18px; }
+  .disclaimer { font-size: 11.5px; color: var(--muted); margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .badge { display:inline-block; font-size: 11px; padding: 1px 8px; border-radius: 10px; background:#e1e9fb; color: var(--finn-blue-deep); font-weight:600; }
+  .note { font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<header class="app">
+  <div class="brand">
+    <span class="wordmark">FINN</span>
+    <span class="logo-div" aria-hidden="true"></span>
+    <span class="wordmark-job">JobAuto</span>
+  </div>
+  <p>Mehr Benefit. Null Mehrkosten. Berechnung der Mitarbeiter- und Arbeitgeber-Ersparnis bei Gehaltsumwandlung – in zwei Varianten: <strong>mit</strong> und <strong>ohne</strong> Weitergabe der Umsatzsteuer des geldwerten Vorteils an die Mitarbeiter:in.</p>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="employee">👤 Mitarbeiter:in</button>
+    <button class="tab-btn" data-tab="employer">🏢 Arbeitgeber:in</button>
+  </div>
+
+  <!-- ============================ EMPLOYEE TAB ============================ -->
+  <section class="tab-panel active" id="tab-employee">
+    <div class="card">
+      <h2>Eingaben</h2>
+      <div class="form-section">
+        <h3>Mitarbeiter:in</h3>
+        <div class="form-grid">
+          <div class="field2"><label>Bruttomonatsgehalt (€)</label><input type="text" inputmode="numeric" id="grossSalary" value="5.000"></div>
+          <div class="field2"><label>Steuerklasse</label><select id="taxClass"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+          <div class="field2"><label>Bundesland</label><select id="state">
+            <option value="BY">Bayern</option><option value="BW">Baden-Württemberg</option>
+            <option value="BE">Berlin</option><option value="HH">Hamburg</option>
+            <option value="NW">Nordrhein-Westfalen</option><option value="SN">Sachsen</option>
+            <option value="HE">Hessen</option><option value="NI">Niedersachsen</option>
+            <option value="OTHER">Übrige Länder</option></select></div>
+          <div class="field2"><label>Anzahl Kinder</label><input type="number" id="children" value="0" step="1" min="0"></div>
+          <div class="field2"><label>KV-Beitragssatz (%)</label><input type="number" id="kvRate" value="14.6" step="0.1"></div>
+          <div class="field2"><label>KV-Zusatzbeitrag (%)</label><input type="number" id="kvZusatz" value="2.5" step="0.1"></div>
+          <div class="field2"><label>Einfacher Arbeitsweg (km)</label><input type="number" id="commuteKm" value="18" step="1" min="0"></div>
+          <div class="field2"><label>Kirchensteuer</label><div class="toggle-wrap">
+            <label class="opt"><input type="radio" name="church" value="no" checked> nein</label>
+            <label class="opt"><input type="radio" name="church" value="yes"> ja</label></div></div>
+          <div class="field2"><label>Krankenversicherung</label><div class="toggle-wrap">
+            <label class="opt"><input type="radio" name="kvType" value="gkv" checked> GKV</label>
+            <label class="opt"><input type="radio" name="kvType" value="pkv"> PKV</label></div></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <h3>Fahrzeug & JobAuto</h3>
+        <div class="form-grid">
+          <div class="field2" style="grid-column:1/-1"><label>FINN Fahrzeug auswählen</label><select id="carSelect"></select></div>
+          <div class="field2"><label>Listenpreis brutto (€)</label><input type="text" inputmode="numeric" id="listPrice" value="53.900"></div>
+          <div class="field2"><label>Gesamtrate brutto / Monat (€)</label><input type="number" id="rateGross" value="594" step="1"></div>
+          <div class="field2"><label>Motorisierung / GwV-Methode</label><select id="gwvMethod">
+            <option value="0.0025">Elektro – 0,25 %</option>
+            <option value="0.005">Hybrid / EV &gt;100k – 0,5 %</option>
+            <option value="0.01">Verbrenner – 1 %</option></select></div>
+          <div class="field2"><label>Vorsteuerabzug (Rate netto)</label><div class="toggle-wrap">
+            <label class="opt"><input type="radio" name="vorsteuer" value="yes" checked> ja</label>
+            <label class="opt"><input type="radio" name="vorsteuer" value="no"> nein</label></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results" id="empCards"></div>
+
+    <div class="tables">
+      <div class="card"><h2>Berechnung Einkommen <span class="tag sand">ohne Weitergabe der USt</span></h2><table class="waterfall" id="empTableOhne"></table></div>
+      <div class="card"><h2>Berechnung Einkommen <span class="tag sky">mit Weitergabe der USt</span></h2><table class="waterfall" id="empTableMit"></table></div>
+    </div>
+  </section>
+
+  <!-- ============================ EMPLOYER TAB ============================ -->
+  <section class="tab-panel" id="tab-employer">
+    <div class="card">
+      <h2>Eingaben</h2>
+      <div class="form-section">
+        <h3>Beitragssätze Arbeitgeber:in (%)</h3>
+        <div class="form-grid">
+          <div class="field2"><label>Rentenversicherung</label><input type="number" id="agRv" value="9.3" step="0.1"></div>
+          <div class="field2"><label>Krankenversicherung (½ AN-Satz)</label><input type="number" id="agKv" value="7.3" step="0.1"></div>
+          <div class="field2"><label>KV-Zusatzbeitrag (½)</label><input type="number" id="agKvZusatz" value="1.25" step="0.05"></div>
+          <div class="field2"><label>Pflegeversicherung</label><input type="number" id="agPv" value="1.8" step="0.1"></div>
+          <div class="field2"><label>Arbeitslosenversicherung</label><input type="number" id="agAlv" value="1.3" step="0.1"></div>
+        </div>
+      </div>
+      <p class="note" style="margin:14px 0 0;">Mitarbeiter-Inputs (Gehalt, Fahrzeug, GwV-Methode) werden aus dem Tab „Mitarbeiter:in" übernommen. Eine AG-Ersparnis entsteht v. a., wenn das Gehalt unter den Beitragsbemessungsgrenzen liegt.</p>
+    </div>
+
+    <div class="results" id="erCards"></div>
+
+    <div class="tables">
+      <div class="card"><h2>AG-Lohnnebenkosten <span class="tag sand">ohne Weitergabe der USt</span></h2><table class="waterfall" id="erTableOhne"></table></div>
+      <div class="card"><h2>AG-Lohnnebenkosten <span class="tag sky">mit Weitergabe der USt</span></h2>
+        <table class="waterfall" id="erTableMit"></table>
+        <p class="note" style="margin-top:10px;">Hinweis: In dieser Variante werden die Arbeitgeber-Beiträge <em>ohne</em> Beitragsbemessungsgrenze angesetzt.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px;">
+      <h2>Hochrechnung</h2>
+      <div class="form-grid">
+        <div class="field2"><label>Anzahl Mitarbeiter:innen / Abos</label><input type="number" id="numEmployees" value="50" step="1" min="1"></div>
+        <div class="field2"><label>USt-Weitergabe an Mitarbeiter:in</label><div class="toggle-wrap">
+          <label class="opt"><input type="radio" name="scaleVariant" value="ohne" checked> ohne</label>
+          <label class="opt"><input type="radio" name="scaleVariant" value="mit"> mit</label></div></div>
+      </div>
+      <div class="results" id="erScale" style="margin-top:18px; margin-bottom:0;"></div>
+    </div>
+  </section>
+
+  <details class="assump">
+    <summary>📋 Annahmen, Formeln & Konstanten</summary>
+    <ul id="assumpList"></ul>
+  </details>
+
+  <p class="disclaimer">
+    <strong>Haftungsausschluss:</strong> Dieser Rechner stellt eine vereinfachte, unverbindliche Schätzung dar und ersetzt keine Steuer-, Rechts- oder Lohnabrechnungsberatung.
+    Der geldwerte Vorteil wird nach der 1 %- bzw. 0,5 %-/0,25 %-Regelung (§ 6 Abs. 1 Nr. 4 EStG) inkl. Entfernungspauschale ermittelt, die Umsatzsteuer nach dem UStG.
+    Lohnsteuer und Sozialabgaben werden nach dem Einkommensteuertarif (§ 32a EStG, Veranlagungszeitraum 2026), der Vorsorgepauschale (§ 39b EStG) sowie den
+    Beitragssätzen und Beitragsbemessungsgrenzen der Sozialversicherung (SGB) berechnet. Maßgeblich sind stets die jeweils aktuellen gesetzlichen Werte;
+    die tatsächliche Lohnabrechnung kann abweichen. Vor verbindlicher Nutzung ist eine fachliche bzw. steuerliche Prüfung erforderlich.
+  </p>
+</div>
+
+<script>
+/* ============================================================================
+   KONFIGURATION — German payroll assumptions (Brutto-Netto-Logik, ~2025/2026).
+   ⚠️ TODO: gegen offiziellen Programmablaufplan (PAP) & finale Rechengrößen prüfen.
+   ============================================================================ */
+const CONFIG = {
+  bbg: { rvAlv: 8450.00, kvPv: 5812.50 },     // Rechengrößen 2026 (monatl.)
+  employee: { rvRate: 0.093, alvRate: 0.013, pvRate: 0.018, pvChildless: 0.006, pvSaxonyExtra: 0.005 },
+  // §32a EStG — Tarif 2026 (Steuerfortentwicklungsgesetz, gültig ab 01.01.2026)
+  tax: { grundfreibetrag: 12348, werbungskosten: 1230, sonderausgaben: 36,
+         z2Limit: 17799, z3Limit: 69878, z4Limit: 277825, vorsorgeKvBase: 0.07 },
+  soli: { rateOnTax: 0.055, monthlyFreigrenze: 20000/12 },
+  churchRate: { BY: 0.08, BW: 0.08, OTHER: 0.09 },
+  vat: { rate: 0.19 },
+  commuteBaseRate: 0.0003,
+  monthsPerYear: 12,
+};
+
+const $ = (id) => document.getElementById(id);
+const num = (id) => parseFloat($(id).value) || 0;
+const numInt = (id) => parseInt(($(id).value + '').replace(/[^\d]/g, ''), 10) || 0;   // Ganzzahl ohne Tausenderpunkt
+const fmtInt = (n) => (n || 0).toLocaleString('de-DE');                               // 53900 -> "53.900"
+const radio = (name) => document.querySelector(`input[name="${name}"]:checked`).value;
+const fmt = (v) => new Intl.NumberFormat('de-DE', { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(v);
+const fmt2 = (v) => new Intl.NumberFormat('de-DE', { style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2 }).format(v);
+const pct = (v) => new Intl.NumberFormat('de-DE',{style:'percent',maximumFractionDigits:0}).format(v);
+
+/* ===== 1) EINKOMMENSTEUER — §32a EStG (Handelsblatt-Logik) ================= */
+function incomeTaxAnnual(zvE) {
+  // §32a EStG Tarif 2026 — Jahressteuer (Koeffizienten amtlich, gesetze-im-internet.de)
+  const t = CONFIG.tax; const x = Math.floor(zvE);
+  let tax;
+  if (x <= t.grundfreibetrag) return 0;
+  else if (x <= t.z2Limit) { const y = (x - t.grundfreibetrag) / 10000; tax = (914.51 * y + 1400) * y; }
+  else if (x <= t.z3Limit) { const z = (x - t.z2Limit) / 10000; tax = (173.10 * z + 2397) * z + 1034.87; }
+  else if (x <= t.z4Limit) tax = 0.42 * x - 11135.63;
+  else tax = 0.45 * x - 19470.38;
+  return Math.floor(tax);   // PAP: Jahreslohnsteuer auf vollen Euro abrunden
+}
+function vorsorgepauschale(grossAnnual, kvZusatz, pvEmpRate) {
+  const rv = Math.min(grossAnnual, CONFIG.bbg.rvAlv * 12) * CONFIG.employee.rvRate;
+  const kvBase = Math.min(grossAnnual, CONFIG.bbg.kvPv * 12);
+  const kv = kvBase * (CONFIG.tax.vorsorgeKvBase + (kvZusatz/100)/2);
+  const pv = kvBase * pvEmpRate;
+  return rv + kv + pv;
+}
+function calculateIncomeTax({ grossMonthly, taxClass, kvZusatz, pvEmpRate, kvType }) {
+  const grossAnnual = grossMonthly * 12;
+  const vorsorge = kvType === 'gkv'
+    ? vorsorgepauschale(grossAnnual, kvZusatz, pvEmpRate)
+    : Math.min(grossAnnual * 0.12, 1900);
+  const entlastung = (taxClass === 2) ? 4260 : 0;
+  let zvE = Math.max(0, grossAnnual - CONFIG.tax.werbungskosten - CONFIG.tax.sonderausgaben - vorsorge - entlastung);
+  let annualTax;
+  switch (taxClass) {
+    case 3: annualTax = 2 * incomeTaxAnnual(zvE / 2); break;
+    case 5: case 6: annualTax = incomeTaxAnnual(zvE + CONFIG.tax.grundfreibetrag); break;
+    default: annualTax = incomeTaxAnnual(zvE);
+  }
+  return Math.max(0, annualTax) / 12;
+}
+function calculateSoli(monthlyTax) {
+  return monthlyTax > CONFIG.soli.monthlyFreigrenze ? monthlyTax * CONFIG.soli.rateOnTax : 0;
+}
+function calculateChurchTax(monthlyTax, state, churchYes) {
+  return churchYes ? monthlyTax * (CONFIG.churchRate[state] ?? CONFIG.churchRate.OTHER) : 0;
+}
+
+/* ===== 2) SOZIALVERSICHERUNG — Arbeitnehmer-Anteil ======================== */
+function pvEmployeeRate(children, state) {
+  let r = CONFIG.employee.pvRate;
+  if (children === 0) r += CONFIG.employee.pvChildless;
+  if (state === 'SN') r += CONFIG.employee.pvSaxonyExtra;
+  return r;
+}
+function calculateSocialSecurity({ baseMonthly, kvRate, kvZusatz, children, state, kvType }) {
+  const e = CONFIG.employee;
+  const rv  = Math.min(baseMonthly, CONFIG.bbg.rvAlv) * e.rvRate;
+  const alv = Math.min(baseMonthly, CONFIG.bbg.rvAlv) * e.alvRate;
+  if (kvType === 'pkv') return { rv, alv, kv: 0, pv: 0 };
+  const kvBase = Math.min(baseMonthly, CONFIG.bbg.kvPv);
+  const kv = kvBase * ((kvRate/100)/2 + (kvZusatz/100)/2);
+  const pv = kvBase * pvEmployeeRate(children, state);
+  return { rv, alv, kv, pv };
+}
+
+/* ===== 3) GELDWERTER VORTEIL — 1:1 Sheet-Formeln =========================
+   GwV I  = G20 * G25            (BLP_gerundet × Versteuerung BLP: 0,25/0,5/1 %)
+   GwV II = 0,03% * G20 * G16 * G26   (× km × Faktor 0,25/0,5/1)
+   ========================================================================= */
+function calculateGeldwerterVorteil({ listPrice, methodRate, commuteKm }) {
+  const blp = Math.floor(listPrice / 100) * 100;
+  const factor = methodRate / 0.01;
+  const gwv1 = blp * methodRate;
+  const gwv2 = CONFIG.commuteBaseRate * blp * commuteKm * factor;
+  return { blp, gwv1, gwv2, total: gwv1 + gwv2 };
+}
+
+/* ===== 4) UMSATZSTEUER GELDWERTER VORTEIL — 1:1 Sheet-Formeln =============
+   USt I  = (1%  × BLP)        × 19% / 1,19   (volle 1 %, NICHT die EV-Reduktion)
+   USt II = (0,03% × BLP × km) × 19% / 1,19   (volle 0,03 %, ohne Faktor)
+   ========================================================================= */
+function calculateVatOnBenefit({ blp, commuteKm }) {
+  const extract = CONFIG.vat.rate / (1 + CONFIG.vat.rate); // 19% / 1,19
+  const ust1 = (0.01 * blp) * extract;
+  const ust2 = (CONFIG.commuteBaseRate * blp * commuteKm) * extract;
+  return { ust1, ust2, total: ust1 + ust2 };
+}
+
+/* ===== 5) SZENARIO — beide Varianten (ohne / mit Weitergabe der USt) ====== */
+function payroll(base, i) {
+  const tax = calculateIncomeTax({ grossMonthly: base, taxClass: i.taxClass, kvZusatz: i.kvZusatz, pvEmpRate: pvEmployeeRate(i.children, i.state), kvType: i.kvType });
+  const soli = calculateSoli(tax);
+  const church = calculateChurchTax(tax, i.state, i.church);
+  const sv = calculateSocialSecurity({ baseMonthly: base, kvRate: i.kvRate, kvZusatz: i.kvZusatz, children: i.children, state: i.state, kvType: i.kvType });
+  const totalDeduct = tax + soli + church + sv.rv + sv.alv + sv.kv + sv.pv;
+  return { tax, soli, church, sv, totalDeduct };
+}
+function buildVariant(i, common, variant) {
+  const { gwv, rateNet, rateGross, ust } = common;
+  // Barlohnumwandlung in BEIDEN Varianten = Netto-Rate (Gesamtrate / 1,19 bei Vorsteuerabzug).
+  // Unterschied der Varianten = nur die USt-Zeile auf den geldwerten Vorteil.
+  const conversion = rateNet;
+  const ustLine = variant === 'mit' ? ust : 0;
+  const baseFinn = i.grossSalary;
+  const baseJob  = i.grossSalary - conversion + gwv - ustLine;
+  const finn = payroll(baseFinn, i);
+  const job  = payroll(baseJob, i);
+  const netFinn = baseFinn - finn.totalDeduct;
+  const netJob  = baseJob - job.totalDeduct - gwv;
+  const dispoFinn = netFinn - rateGross;
+  const dispoJob  = netJob;
+  const savingEUR = dispoJob - dispoFinn;
+  const savingPct = rateGross ? savingEUR / rateGross : 0;
+  return { variant, conversion, ustLine, baseFinn, baseJob, finn, job, netFinn, netJob, dispoFinn, dispoJob, savingEUR, savingPct };
+}
+function calculateScenario(i) {
+  const g = calculateGeldwerterVorteil({ listPrice: i.listPrice, methodRate: i.methodRate, commuteKm: i.commuteKm });
+  const u = calculateVatOnBenefit({ blp: g.blp, commuteKm: i.commuteKm });
+  const rateNet = i.vorsteuer ? i.rateGross / (1 + CONFIG.vat.rate) : i.rateGross;
+  const common = { gwv: g.total, gwvObj: g, ust: u.total, ustObj: u, rateNet, rateGross: i.rateGross };
+  const ohne = buildVariant(i, common, 'ohne');
+  const mit  = buildVariant(i, common, 'mit');
+  const effectiveCost = i.rateGross - ohne.savingEUR;
+  return { common, ohne, mit, effectiveCost };
+}
+
+/* ===== 6) ARBEITGEBER — beide Blöcke (Block 1 mit Cap, Block 2 ohne Cap) === */
+function employerBlock(baseFinn, baseJob, capped) {
+  const r = { rv: num('agRv')/100, alv: num('agAlv')/100, kv: num('agKv')/100, kvZ: num('agKvZusatz')/100, pv: num('agPv')/100 };
+  function sv(base) {
+    const rvBase = capped ? Math.min(base, CONFIG.bbg.rvAlv) : base;
+    const kvBase = capped ? Math.min(base, CONFIG.bbg.kvPv) : base;
+    const rv = rvBase * r.rv, alv = rvBase * r.alv, kv = kvBase * (r.kv + r.kvZ), pv = kvBase * r.pv;
+    return { rv, alv, kv, pv, total: rv + alv + kv + pv };
+  }
+  const without = sv(baseFinn), withJob = sv(baseJob);
+  return { without, withJob, saving: without.total - withJob.total, savingPct: without.total ? (without.total - withJob.total)/without.total : 0 };
+}
+
+/* ===== INPUTS ============================================================= */
+function collectInputs() {
+  return {
+    grossSalary: numInt('grossSalary'), taxClass: parseInt($('taxClass').value, 10), state: $('state').value,
+    church: radio('church') === 'yes', kvType: radio('kvType'), kvRate: num('kvRate'), kvZusatz: num('kvZusatz'),
+    children: num('children'), commuteKm: num('commuteKm'), listPrice: numInt('listPrice'), rateGross: num('rateGross'),
+    vorsteuer: radio('vorsteuer') === 'yes', methodRate: parseFloat($('gwvMethod').value),
+  };
+}
+
+/* ===== RENDERING ========================================================== */
+function resultCard(k, v, neutral, hero) {
+  const colored = (!neutral && typeof v === 'number') ? (v >= 0 ? 'pos' : 'neg') : '';
+  return `<div class="result ${hero||''}"><div class="k">${k}</div><div class="v ${colored}">${typeof v==='number'?fmt(v):v}</div></div>`;
+}
+function row(op, lbl, a, b, cls='') {
+  return `<tr class="${cls}"><td class="op">${op}</td><td class="lbl">${lbl}</td><td class="num">${a===null?'':fmt(a)}</td><td class="num">${b===null?'':fmt(b)}</td></tr>`;
+}
+function empWaterfall(v, i, common, withUstRow) {
+  const f = v.finn, j = v.job;
+  let h = `<thead><tr><th></th><th></th><th>FINN Abo</th><th>JobAuto</th></tr></thead><tbody>`;
+  h += row('', 'Bruttomonatsgehalt', v.baseFinn, i.grossSalary);
+  h += row('(-)', 'Barlohnumwandlung', null, v.conversion);
+  h += row('(+)', 'Geldwerter Vorteil', null, common.gwv);
+  if (withUstRow) h += row('(-)', 'Umsatzsteuer geldw. Vorteil', null, v.ustLine);
+  h += row('', 'Berechnungsgrundlage Steuer & SV', v.baseFinn, v.baseJob, 'sum');
+  h += `<tr class="section"><td colspan="4">Steuern</td></tr>`;
+  h += row('(-)', 'Solidaritätszuschlag', f.soli, j.soli);
+  h += row('(-)', 'Kirchensteuer', f.church, j.church);
+  h += row('(-)', 'Lohnsteuer', f.tax, j.tax);
+  h += `<tr class="section"><td colspan="4">Sozialabgaben</td></tr>`;
+  h += row('(-)', 'Rentenversicherung', f.sv.rv, j.sv.rv);
+  h += row('(-)', 'Arbeitslosenversicherung', f.sv.alv, j.sv.alv);
+  h += row('(-)', 'Krankenversicherung', f.sv.kv, j.sv.kv);
+  h += row('(-)', 'Pflegeversicherung', f.sv.pv, j.sv.pv);
+  h += row('', 'Summe Lohnsteuer & Sozialabgaben', f.totalDeduct, j.totalDeduct, 'sum');
+  h += row('(-)', 'Geldwerter Vorteil (Sachbezug)', null, common.gwv);
+  h += row('', 'Nettoeinkommen', v.netFinn, v.netJob, 'sum');
+  h += row('(-)', 'Auto-Abo Rate', i.rateGross, null);
+  h += row('', 'Verfügbares Einkommen', v.dispoFinn, v.dispoJob, 'sum');
+  h += `<tr class="total"><td class="op"></td><td class="lbl">Ersparnis</td><td class="num"></td><td class="num">${fmt(v.savingEUR)}</td></tr>`;
+  return h + `</tbody>`;
+}
+function renderEmployee(i, s) {
+  const sv = (eur, p) => `${fmt(eur)} <span style="font-size:15px;font-weight:700;opacity:.8">· ${pct(p)}</span>`;
+  $('empCards').innerHTML =
+    resultCard('Ersparnis ohne USt-Weitergabe / Monat', sv(s.ohne.savingEUR, s.ohne.savingPct), true, 'hero') +
+    resultCard('Ersparnis mit USt-Weitergabe / Monat', sv(s.mit.savingEUR, s.mit.savingPct), true, 'hero alt');
+  $('empTableOhne').innerHTML = empWaterfall(s.ohne, i, s.common, false);
+  $('empTableMit').innerHTML  = empWaterfall(s.mit, i, s.common, true);
+}
+function erWaterfall(blk, v, i, common, withUstRow) {
+  const w = blk.without, wj = blk.withJob;
+  let h = `<thead><tr><th></th><th></th><th>Ohne JobAuto</th><th>Mit JobAuto</th></tr></thead><tbody>`;
+  h += row('', 'Bruttomonatsgehalt', v.baseFinn, i.grossSalary);
+  h += row('(-)', 'Barlohnumwandlung', null, v.conversion);
+  h += row('(+)', 'Geldwerter Vorteil', null, common.gwv);
+  if (withUstRow) h += row('(-)', 'Umsatzsteuer geldw. Vorteil', null, v.ustLine);
+  h += row('', 'Berechnungsgrundlage Steuer & SV', v.baseFinn, v.baseJob, 'sum');
+  h += `<tr class="section"><td colspan="4">AG-Beiträge (Lohnnebenkosten)</td></tr>`;
+  h += row('(+)', 'Rentenversicherung', w.rv, wj.rv);
+  h += row('(+)', 'Krankenversicherung', w.kv, wj.kv);
+  h += row('(+)', 'Pflegeversicherung', w.pv, wj.pv);
+  h += row('(+)', 'Arbeitslosenversicherung', w.alv, wj.alv);
+  h += row('', 'Summe Steuer & Sozialabgaben', w.total, wj.total, 'sum');
+  h += `<tr class="total"><td class="op"></td><td class="lbl">AG-Lohnnebenkostenersparnis</td><td class="num"></td><td class="num">${fmt(blk.saving)}</td></tr>`;
+  return h + `</tbody>`;
+}
+function renderEmployer(i, s) {
+  const ohne = employerBlock(s.ohne.baseFinn, s.ohne.baseJob, true);
+  const mit  = employerBlock(s.mit.baseFinn, s.mit.baseJob, false);
+  const sv = (eur, p) => `${fmt(eur)} <span style="font-size:15px;font-weight:700;opacity:.8">· ${pct(p)}</span>`;
+  // "ohne Weitergabe": AG trägt die USt des geldw. Vorteils selbst -> vom SV-Vorteil abziehen.
+  // "mit Weitergabe": USt trägt der Mitarbeiter -> AG-Ergebnis unverändert.
+  const ustGwv = s.common.ust;
+  const realOhne = ohne.saving - ustGwv;
+  const realMit  = mit.saving;
+  $('erCards').innerHTML = `
+    <div class="er-col">
+      ${resultCard('AG-Ersparnis ohne USt-Weitergabe an den Mitarbeiter', sv(ohne.saving, ohne.savingPct), true, 'hero')}
+      ${resultCard('Tatsächlich – abzüglich Umsatzsteuer des geldwerten Vorteils', realOhne, false, 'muted')}
+    </div>
+    <div class="er-col">
+      ${resultCard('AG-Ersparnis mit USt-Weitergabe an den Mitarbeiter', sv(mit.saving, mit.savingPct), true, 'hero alt')}
+      ${resultCard('Tatsächlich – Umsatzsteuer trägt der Mitarbeiter', realMit, false, 'muted')}
+    </div>`;
+  $('erTableOhne').innerHTML = erWaterfall(ohne, s.ohne, i, s.common, false);
+  $('erTableMit').innerHTML  = erWaterfall(mit, s.mit, i, s.common, true);
+
+  // Hochrechnung ganz unten — gewählte Variante × Anzahl Mitarbeiter:innen
+  const n = num('numEmployees');
+  const variant = radio('scaleVariant');
+  const blk = variant === 'mit' ? mit : ohne;
+  const variantLabel = variant === 'mit' ? 'mit USt-Weitergabe' : 'ohne USt-Weitergabe';
+  $('erScale').innerHTML =
+    resultCard(`AG-Ersparnis je MA / Monat (${variantLabel})`, blk.saving, true) +
+    resultCard(`AG-Ersparnis je MA / Jahr (${variantLabel})`, blk.saving * 12, true) +
+    resultCard(`Hochgerechnet auf ${n} Mitarbeiter:innen / Jahr`, blk.saving * 12 * n, false, 'hero');
+}
+
+function renderAssumptions() {
+  const c = CONFIG;
+  $('assumpList').innerHTML = `
+    <li><strong>Geldwerter Vorteil</strong> (§ 6 Abs. 1 Nr. 4 EStG): Listenpreis-Versteuerung mit {0,25 / 0,5 / 1 %} des Bruttolistenpreises zzgl. 0,03 % je Entfernungskilometer (entsprechend der gewählten Methode). Bruttolistenpreis auf volle 100 € abgerundet.</li>
+    <li><strong>Umsatzsteuer auf den geldw. Vorteil</strong> (UStG): 19 % USt, herausgerechnet (19 %/1,19) auf Basis der vollen 1 %- bzw. 0,03 %-Werte.</li>
+    <li><strong>Zwei Varianten:</strong> „ohne Weitergabe" → Gehaltsumwandlung = Bruttorate, keine USt-Zeile · „mit Weitergabe" → Gehaltsumwandlung = Nettorate (bei Vorsteuerabzug), abzgl. USt auf den geldw. Vorteil.</li>
+    <li><strong>Lohnsteuer</strong> (§ 32a EStG, 2026): Einkommensteuertarif + Vorsorgepauschale (§ 39b EStG: RV + KV + Zusatzbeitrag/2 + PV). Solidaritätszuschlag 5,5 % oberhalb der Freigrenze, Kirchensteuer 8 % (BY/BW) sonst 9 %.</li>
+    <li><strong>Sozialabgaben</strong> (SGB, 2026): RV ${c.employee.rvRate*100} %, ALV ${c.employee.alvRate*100} %, KV ½×Beitragssatz + ½×Zusatzbeitrag, PV ${c.employee.pvRate*100} % (+${c.employee.pvChildless*100} % für Kinderlose). Beitragsbemessungsgrenzen RV/ALV ${fmt2(c.bbg.rvAlv)} · KV/PV ${fmt2(c.bbg.kvPv)} / Monat.</li>
+    <li><strong>Arbeitgeber:</strong> Lohnnebenkosten = Arbeitgeberanteile zur Sozialversicherung. Der Solidaritätszuschlag zählt nicht zu den Arbeitgeber-Lohnnebenkosten.</li>`;
+}
+
+function recompute() {
+  const i = collectInputs();
+  const s = calculateScenario(i);
+  renderEmployee(i, s);
+  renderEmployer(i, s);
+}
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active'); $('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+document.querySelectorAll('input, select').forEach(el => { el.addEventListener('input', recompute); el.addEventListener('change', recompute); });
+
+/* ===== FINN Fahrzeug-Auswahl ============================================
+   Raten = echte finn.com-Bruttoraten (mtl.). Listenpreise = ca.-UVP (editierbar),
+   da die FINN-API den Bruttolistenpreis nicht ausgibt. Alle Modelle Elektro -> 0,25 %.
+   ======================================================================== */
+const CARS = [
+  { id:'custom',         label:'— eigenes Fahrzeug / manuell —' },
+  { id:'citroen-ec3',    label:'Citroën ë-C3 MAX (113 PS)',            price:23300, rate:219 },
+  { id:'byd-dolphin',    label:'BYD Dolphin Surf Comfort (43 kWh)',    price:22990, rate:249 },
+  { id:'fiat-panda',     label:'Fiat Grande Panda Elektro La Prima',   price:28490, rate:229 },
+  { id:'opel-frontera',  label:'Opel Frontera Electric GS (54 kWh)',   price:30400, rate:249 },
+  { id:'hyundai-inster', label:'Hyundai Inster Cross (49 kWh)',        price:26750, rate:329 },
+  { id:'mg4',            label:'MG4 Urban Long Range (54 kWh)',        price:34990, rate:359 },
+  { id:'skoda-enyaq',    label:'Škoda Enyaq Coupé 85 Sportline',       price:53900, rate:649 },
+  { id:'mg-cyberster',   label:'MG Cyberster RWD (77 kWh)',            price:59990, rate:859 },
+  { id:'ioniq9',         label:'Hyundai IONIQ 9 Heckantrieb (110 kWh)',price:68500, rate:749 },
+  { id:'ioniq5n',        label:'Hyundai IONIQ 5 N',                    price:76900, rate:769 },
+];
+const DEFAULT_CAR = 'skoda-enyaq';
+function applyCar(id) {
+  const c = CARS.find(x => x.id === id);
+  if (!c || c.id === 'custom') { recompute(); return; }
+  $('listPrice').value = fmtInt(c.price);
+  $('rateGross').value = c.rate;
+  $('gwvMethod').value = c.price > 100000 ? '0.005' : '0.0025'; // EV bis 100k -> 0,25 %
+  recompute();
+}
+(function initCarSelect(){
+  $('carSelect').innerHTML = CARS.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+  $('carSelect').value = DEFAULT_CAR;
+  $('carSelect').addEventListener('change', () => applyCar($('carSelect').value));
+  // Manuelle Änderung an Preis/Rate -> zurück auf „eigenes Fahrzeug"
+  ['listPrice','rateGross'].forEach(id => $(id).addEventListener('input', () => { $('carSelect').value = 'custom'; }));
+  applyCar(DEFAULT_CAR); // Default-Fahrzeug direkt anwenden
+})();
+
+/* ===== Tausenderpunkt-Formatierung (Gehalt & Listenpreis) ===== */
+['grossSalary','listPrice'].forEach(id => {
+  const el = $(id);
+  el.addEventListener('blur', () => { el.value = fmtInt(numInt(id)); });
+});
+
+/* ===== GwV-Methode: eingeklappt nur Antrieb, im Dropdown mit Prozent ===== */
+(function gwvLabelSwap(){
+  const sel = $('gwvMethod');
+  const FULL  = { '0.0025':'Elektro – 0,25 %', '0.005':'Hybrid – 0,5 %', '0.01':'Verbrenner – 1 %' };
+  const SHORT = { '0.0025':'Elektro',           '0.005':'Hybrid',         '0.01':'Verbrenner' };
+  const set = (full) => [...sel.options].forEach(o => { if (full[o.value]) o.textContent = full[o.value]; });
+  sel.addEventListener('mousedown', () => set(FULL));   // vor dem Öffnen: volle Labels
+  sel.addEventListener('keydown',   () => set(FULL));
+  sel.addEventListener('change',    () => set(SHORT));  // nach Auswahl: nur Antrieb
+  sel.addEventListener('blur',      () => set(SHORT));
+  set(SHORT);                                           // Start: nur Antrieb
+})();
+
+renderAssumptions();
+recompute();
+</script>
+</body>
+</html>
